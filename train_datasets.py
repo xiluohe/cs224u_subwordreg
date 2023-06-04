@@ -27,25 +27,21 @@ class BPEDropoutTrainDataset(torch.utils.data.Dataset):
         tokenized_inputs = self.tokenizer(self.dataset["tokens"][idx], truncation=True, max_length=512, is_split_into_words=True)
         label_old = self.dataset["ner_tags"][idx]
 
-        if self.train:
-            word_idx = 0
-            label_new = []
+        word_idx = 0
+        label_new = []
+
+        for id in tokenized_inputs['input_ids']:
+            token = self.tokenizer.convert_ids_to_tokens(id)
+            if token == "<s>":
+                label_new.append(-100) #assign <s> to dummy token
+            elif chr(9601) in token:
+                label_new.append(label_old[word_idx]) #only label first token of a word
+                word_idx += 1
+            else:
+                label_new.append(-100) #assign non-first token of word to dummy token
     
-            for id in tokenized_inputs['input_ids']:
-                token = self.tokenizer.convert_ids_to_tokens(id)
-                if token == "<s>":
-                    label_new.append(-100) #assign <s> to dummy token
-                elif chr(9601) in token:
-                    label_new.append(label_old[word_idx]) #only label first token of a word
-                    word_idx += 1
-                else:
-                    label_new.append(-100) #assign non-first token of word to dummy token
-        
-            data = tokenized_inputs['input_ids']
-            label = label_new
-        else:
-            data = tokenized_inputs['input_ids']
-            label = label_old
+        data = tokenized_inputs['input_ids']
+        label = label_new #+ [-100] * (512 - len(label_new))
         
         return {'input_ids': data, 'labels': label}
 

@@ -14,3 +14,4 @@ spacy==3.5.1
 seqeval==1.2.2
 jupyterlab==4.0.1
 sentencepiece==0.1.99
+accelerate==0.19.0
