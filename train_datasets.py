@@ -5,6 +5,9 @@ import datasets
 class BPEDropoutTrainDataset(torch.utils.data.Dataset):
     def __init__(self, dataset_path, tokenizer_path, dataset_language=None, bpe_dropout_p=0.0, cache_dir=None, train=True):
 
+        if dataset_language == 'ibo' and dataset_path == 'masakhaner':
+            self.ibo_special_case = True
+        
         if dataset_language is not None:
             self.dset = datasets.load_dataset(dataset_path, dataset_language, cache_dir=cache_dir) 
         else: 
@@ -23,9 +26,10 @@ class BPEDropoutTrainDataset(torch.utils.data.Dataset):
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer_path, use_fast=False, sp_model_kwargs={'enable_sampling': bpe_dropout, 'alpha': alpha}, cache_dir=cache_dir)
 
     def __getitem__(self, idx):
-
         tokenized_inputs = self.tokenizer(self.dataset["tokens"][idx], truncation=True, max_length=512, is_split_into_words=True)
         label_old = self.dataset["ner_tags"][idx]
+        if self.ibo_special_case and idx == 1976:
+            label_old = label_old + [0]
 
         word_idx = 0
         label_new = []
@@ -34,11 +38,12 @@ class BPEDropoutTrainDataset(torch.utils.data.Dataset):
             token = self.tokenizer.convert_ids_to_tokens(id)
             if token == "<s>":
                 label_new.append(-100) #assign <s> to dummy token
-            elif chr(9601) in token:
+            elif ord(token[0]) == 9601:
                 label_new.append(label_old[word_idx]) #only label first token of a word
                 word_idx += 1
             else:
                 label_new.append(-100) #assign non-first token of word to dummy token
+                
     
         data = tokenized_inputs['input_ids']
         label = label_new #+ [-100] * (512 - len(label_new))
