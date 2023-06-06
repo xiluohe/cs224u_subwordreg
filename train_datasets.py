@@ -11,6 +11,30 @@ class BPEDropoutTrainDataset(torch.utils.data.Dataset):
         if dataset_language is not None:
             self.dset = datasets.load_dataset(dataset_path, dataset_language, cache_dir=cache_dir) 
         else: 
+            """
+            temp = datasets.load_dataset(dataset_path, cache_dir=cache_dir) 
+            if type(temp['train'][0]['ner_tags'][0]) == 'str':
+                tag2index = {'O': 0,
+                            'B-PER': 1,
+                            'I-PER': 2,
+                            'B-ORG': 3,
+                            'I-ORG': 4,
+                            'B-LOC': 5,
+                            'I-LOC': 6}
+                for split in ['train', 'validation', 'test']:
+                    n = len(temp[split])
+                    for i in range(n):
+                        new_tags = []
+                        ex = temp[split][i]['ner_tags']
+                        for tag in ex:
+                            new_tags.append(tag2index[tag])
+                        temp[split][i]['ner_tags'] = new_tags
+                        if (n < 10):
+                            print(temp[split][i]['ner_tags'])
+                            print(new_tags)
+                  
+            self.dset = temp 
+            """
             self.dset = datasets.load_dataset(dataset_path, cache_dir=cache_dir) 
         
         self.train = train
